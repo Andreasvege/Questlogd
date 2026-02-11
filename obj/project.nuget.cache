@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "PsCHkKIxstU=",
+  "dgSpecHash": "4IoLdvPI0mk=",
   "success": true,
-  "projectFilePath": "/Users/andreasvege/Documents/C# Øving/GameLog/GameLog.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "/Users/andreasvege/Documents/C# Øving/GameLogger/GameLogger.csproj",
+  "expectedPackageFiles": [
+    "/Users/andreasvege/.nuget/packages/microsoft.aspnetcore.openapi/9.0.10/microsoft.aspnetcore.openapi.9.0.10.nupkg.sha512",
+    "/Users/andreasvege/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
   "logs": []
 }
