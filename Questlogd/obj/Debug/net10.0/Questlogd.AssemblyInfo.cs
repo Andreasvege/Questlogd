@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Questlogd")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4cc521c2d3e6e3efef8023f7cfe4f2da0d616a97")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a95ba82121a5e96d8351580446a51f8608a48994")]
 [assembly: System.Reflection.AssemblyProductAttribute("Questlogd")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Questlogd")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

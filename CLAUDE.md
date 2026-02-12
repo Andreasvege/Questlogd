@@ -194,6 +194,20 @@ Components/
 
 ---
 
+## TODO / Plukkes opp senere
+
+### UI-justeringer
+- [ ] Sidebar på hjem-siden: Finjustere posisjonering (lenger til høyre, bredere)
+- [ ] Responsivitet for mobil
+
+### Funksjonalitet
+- [ ] Database (SQLite) i stedet for hardkodet data
+- [ ] Statistikk-side med grafer/oversikt
+- [ ] Lignende spill på spilldetaljer-siden
+- [ ] Flerbruker med innlogging
+
+---
+
 ## Notater
 - Erstatt standard Blazor-layout med custom design fra scratch
 - Begynn med desktop, legg til responsivitet senere
