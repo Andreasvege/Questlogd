@@ -1,0 +1,90 @@
+@page "/library"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Bibliotek - Questlogd</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1>Bibliotek</h1>
+    <div class="d-flex gap-2 flex-wrap">
+        @foreach (var filter in filters)
+        {
+            <button class="btn @(currentFilter == filter.Key ? "btn-primary-custom" : "btn-outline-light")"
+                    @onclick="() => SetFilter(filter.Key)">
+                @filter.Value
+            </button>
+        }
+    </div>
+</div>
+
+<GameGrid Games="@filteredGames"
+          OnGameClick="@NavigateToGame"
+          EmptyMessage="Ingen spill funnet. Logg et spill for å se det her!" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "filter")]
+    public string? FilterParam { get; set; }
+
+    private List<Game> allGames = new();
+    private List<Game> filteredGames = new();
+    private string currentFilter = "all";
+
+    private Dictionary<string, string> filters = new()
+    {
+        { "all", "Alle" },
+        { "playing", "Spiller" },
+        { "completed", "Fullført" },
+        { "dropped", "Droppet" }
+    };
+
+    protected override void OnInitialized()
+    {
+        // Library shows: Playing, Completed, Dropped (not Backlog, Wishlist, or unlogged)
+        allGames = GameService.GetLogged()
+            .Where(g => g.Status != GameStatus.Backlog && g.Status != GameStatus.Wishlist)
+            .ToList();
+
+        // Apply filter from URL if present
+        if (!string.IsNullOrEmpty(FilterParam) && filters.ContainsKey(FilterParam))
+        {
+            currentFilter = FilterParam;
+        }
+
+        ApplyFilter();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(FilterParam) && filters.ContainsKey(FilterParam))
+        {
+            currentFilter = FilterParam;
+            ApplyFilter();
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        currentFilter = filter;
+        ApplyFilter();
+        // Update URL without navigation
+        var uri = Navigation.GetUriWithQueryParameter("filter", filter == "all" ? null : filter);
+        Navigation.NavigateTo(uri, forceLoad: false, replace: true);
+    }
+
+    private void ApplyFilter()
+    {
+        filteredGames = currentFilter switch
+        {
+            "playing" => allGames.Where(g => g.Status == GameStatus.Playing).ToList(),
+            "completed" => allGames.Where(g => g.Status == GameStatus.Completed).ToList(),
+            "dropped" => allGames.Where(g => g.Status == GameStatus.Dropped).ToList(),
+            _ => allGames
+        };
+    }
+
+    private void NavigateToGame(Game game)
+    {
+        Navigation.NavigateTo($"/game/{game.Id}");
+    }
+}

@@ -1,0 +1,194 @@
+@page "/game/{Id:int}"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>@(game?.Name ?? "Spill") - Questlogd</PageTitle>
+
+@if (game == null)
+{
+    <h1>Spill ikke funnet</h1>
+    <p class="text-secondary">Kunne ikke finne spillet du leter etter.</p>
+    <a href="/" class="btn btn-primary-custom">Tilbake til hjem</a>
+}
+else
+{
+    <div class="row g-4">
+        <!-- Cover Image -->
+        <div class="col-md-3">
+            <img src="@game.CoverImageUrl"
+                 alt="@game.Name"
+                 class="img-fluid rounded-3 shadow-lg"
+                 style="width: 100%;"
+                 onerror="this.src='https://via.placeholder.com/264x352?text=No+Cover'" />
+        </div>
+
+        <!-- Game Info -->
+        <div class="col-md-9">
+            <div class="d-flex align-items-start justify-content-between mb-3">
+                <div>
+                    <h1 class="mb-2">@game.Name</h1>
+                    <p class="text-secondary mb-0">
+                        @game.Developer &bull; @game.Genre &bull; @game.ReleaseDate.Year
+                    </p>
+                </div>
+                <StatusBadge Status="@game.Status" />
+            </div>
+
+            @if (game.Status.HasValue)
+            {
+                <!-- Stats Row -->
+                <div class="d-flex gap-4 mb-4 flex-wrap align-items-end">
+                    <!-- Rating - inline editable -->
+                    <div>
+                        <span class="text-secondary d-block mb-1">Din rating</span>
+                        <div class="d-flex gap-1">
+                            @for (int i = 1; i <= 10; i++)
+                            {
+                                var rating = i;
+                                <button class="btn btn-sm @(game.Rating == rating ? "btn-primary-custom" : "btn-outline-secondary")"
+                                        style="width: 32px; height: 32px; padding: 0;"
+                                        @onclick="() => SetRating(rating)">
+                                    @rating
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    @if (game.HoursPlayed.HasValue)
+                    {
+                        <div>
+                            <span class="text-secondary">Timer spilt</span>
+                            <div class="h2 mb-0">@game.HoursPlayed</div>
+                        </div>
+                    }
+
+                    @if (game.LastPlayed.HasValue)
+                    {
+                        <div>
+                            <span class="text-secondary">Sist spilt</span>
+                            <div class="h4 mb-0">@game.LastPlayed.Value.ToString("d. MMM yyyy")</div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Status Buttons -->
+                <div class="mb-4">
+                    <span class="text-secondary d-block mb-2">Endre status</span>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var status in Enum.GetValues<GameStatus>())
+                        {
+                            <button class="btn @(game.Status == status ? "btn-primary-custom" : "btn-outline-light")"
+                                    @onclick="() => UpdateStatus(status)">
+                                @GetStatusText(status)
+                            </button>
+                        }
+                        <button class="btn btn-outline-secondary" @onclick="ClearStatus">
+                            Fjern fra logg
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Review - inline editable -->
+                <div class="card-game p-4">
+                    <h4 class="mb-3">Din anmeldelse</h4>
+                    <textarea class="form-control bg-transparent text-light border-0 p-0"
+                              rows="4"
+                              placeholder="Klikk her for å skrive din anmeldelse..."
+                              style="resize: none;"
+                              @bind="reviewText"
+                              @bind:event="oninput"
+                              @onblur="SaveReview"></textarea>
+                    @if (isSaving)
+                    {
+                        <small class="text-secondary mt-2 d-block">Lagrer...</small>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Not logged yet -->
+                <div class=" p-4 text-center">
+                    <h4 class="mb-3">Dette spillet er ikke logget</h4>
+                    <p class="text-secondary mb-3">Logg spillet for å legge til status, rating og anmeldelse.</p>
+                    <a href="/log/@game.Id" class="btn btn-primary-custom">Logg dette spillet</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="javascript:history.back()" class="btn btn-outline-light">
+            &larr; Tilbake
+        </a>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Game? game;
+    private string reviewText = string.Empty;
+    private bool isSaving = false;
+
+    protected override void OnInitialized()
+    {
+        game = GameService.GetById(Id);
+        reviewText = game?.Review ?? string.Empty;
+    }
+
+    private void SetRating(int rating)
+    {
+        if (game != null)
+        {
+            // Toggle off if same rating clicked
+            var newRating = game.Rating == rating ? null : (int?)rating;
+            GameService.UpdateReview(game.Id, newRating, game.Review);
+            game = GameService.GetById(Id);
+        }
+    }
+
+    private async Task SaveReview()
+    {
+        if (game != null && reviewText != game.Review)
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            await Task.Delay(100); // Small delay for UX
+            GameService.UpdateReview(game.Id, game.Rating, reviewText);
+            game = GameService.GetById(Id);
+
+            isSaving = false;
+        }
+    }
+
+    private void UpdateStatus(GameStatus newStatus)
+    {
+        if (game != null)
+        {
+            GameService.UpdateStatus(game.Id, newStatus);
+            game = GameService.GetById(Id);
+        }
+    }
+
+    private void ClearStatus()
+    {
+        if (game != null)
+        {
+            GameService.ClearStatus(game.Id);
+            game = GameService.GetById(Id);
+        }
+    }
+
+    private string GetStatusText(GameStatus status) => status switch
+    {
+        GameStatus.Playing => "Spiller",
+        GameStatus.Completed => "Fullført",
+        GameStatus.Backlog => "Backlog",
+        GameStatus.Wishlist => "Ønskeliste",
+        GameStatus.Dropped => "Droppet",
+        _ => "Ukjent"
+    };
+}

@@ -1,0 +1,28 @@
+<div class="rating-display">
+    @if (Rating.HasValue)
+    {
+        <span class="rating-value @GetRatingClass()">@Rating</span>
+        <span class="rating-max">/ 10</span>
+    }
+    else
+    {
+        <span class="text-secondary">—</span>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? Rating { get; set; }
+
+    private string GetRatingClass()
+    {
+        if (!Rating.HasValue) return "";
+
+        return Rating.Value switch
+        {
+            >= 8 => "rating-high",
+            >= 5 => "rating-medium",
+            _ => "rating-low"
+        };
+    }
+}

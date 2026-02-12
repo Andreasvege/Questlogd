@@ -1,0 +1,102 @@
+@page "/reviews"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Anmeldelser - Questlogd</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Anmeldelser</h1>
+        <p class="text-secondary mb-0">Alle dine spillanmeldelser</p>
+    </div>
+</div>
+
+@if (!gamesWithReviews.Any())
+{
+    <div class="card-game p-4 text-center">
+        <p class="mb-3">Du har ikke skrevet noen anmeldelser ennå.</p>
+        <a href="/log" class="btn btn-primary-custom">Logg et spill</a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var game in gamesWithReviews)
+        {
+            <div class="col-12">
+                <div class="card-game p-4">
+                    <div class="row g-3">
+                        <div class="col-auto">
+                            <img src="@game.CoverImageUrl"
+                                 alt="@game.Name"
+                                 class="rounded"
+                                 style="width: 80px; height: 107px; object-fit: cover; cursor: pointer;"
+                                 @onclick="() => NavigateToGame(game)" />
+                        </div>
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h4 class="mb-1" style="cursor: pointer;" @onclick="() => NavigateToGame(game)">
+                                        @game.Name
+                                    </h4>
+                                    <span class="text-secondary">@game.Developer</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    @if (game.Rating.HasValue)
+                                    {
+                                        <div class="text-end">
+                                            <span class="h3 mb-0 @GetRatingClass(game.Rating.Value)">@game.Rating</span>
+                                            <span class="text-secondary">/ 10</span>
+                                        </div>
+                                    }
+                                    <StatusBadge Status="@game.Status" />
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(game.Review))
+                            {
+                                <p class="mb-2">@game.Review</p>
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-secondary">
+                                    @if (game.HoursPlayed.HasValue)
+                                    {
+                                        <span>@game.HoursPlayed timer spilt</span>
+                                    }
+                                    @if (game.LastPlayed.HasValue)
+                                    {
+                                        <span class="ms-3">Sist spilt: @game.LastPlayed.Value.ToString("d. MMM yyyy")</span>
+                                    }
+                                </small>
+                                <a href="/log/@game.Id" class="btn btn-sm btn-outline-light">Rediger</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Game> gamesWithReviews = new();
+
+    protected override void OnInitialized()
+    {
+        gamesWithReviews = GameService.GetWithReviews();
+    }
+
+    private void NavigateToGame(Game game)
+    {
+        Navigation.NavigateTo($"/game/{game.Id}");
+    }
+
+    private string GetRatingClass(int rating) => rating switch
+    {
+        >= 8 => "text-success",
+        >= 5 => "text-warning",
+        _ => "text-danger"
+    };
+}

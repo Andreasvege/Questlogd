@@ -1,0 +1,102 @@
+@page "/"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Hjem - Questlogd</PageTitle>
+
+<div class="row">
+    <!-- Main content -->
+    <div class="col-lg-8">
+        <h1 class="mb-4">Velkommen tilbake!</h1>
+
+        @if (playingNow.Any())
+        {
+            <section class="section">
+                <SectionHeader Title="Spiller nå" LinkUrl="/library?filter=playing" LinkText="Se alle" />
+                <GameGrid Games="@playingNow" OnGameClick="@NavigateToGame" />
+            </section>
+        }
+
+        @if (recentlyPlayed.Any())
+        {
+            <section class="section">
+                <SectionHeader Title="Nylig spilt" />
+                <GameGrid Games="@recentlyPlayed" OnGameClick="@NavigateToGame" />
+            </section>
+        }
+
+        @if (!playingNow.Any() && !recentlyPlayed.Any())
+        {
+            <div class="card-game p-4 text-center">
+                <h3 class="mb-3">Kom i gang!</h3>
+                <p class="text-secondary mb-3">Du har ikke logget noen spill ennå.</p>
+                <a href="/log" class="btn btn-primary-custom">Logg ditt første spill</a>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar with stats -->
+    <div class="col-lg-4 ps-lg-10">
+        <div class="stats-sidebar">
+            <h4 class="mb-3">Oversikt</h4>
+
+            <a href="/library?filter=playing" class="stat-link">
+                <span>Spiller nå</span>
+                <span class="h4 mb-0 text-accent-blue">@stats.Playing</span>
+            </a>
+
+            <a href="/library?filter=completed" class="stat-link">
+                <span>Fullført</span>
+                <span class="h4 mb-0" style="color: #22c55e;">@stats.Completed</span>
+            </a>
+
+            <a href="/backlog" class="stat-link">
+                <span>Backlog</span>
+                <span class="h4 mb-0" style="color: #eab308;">@stats.Backlog</span>
+            </a>
+
+            <a href="/wishlist" class="stat-link">
+                <span>Ønskeliste</span>
+                <span class="h4 mb-0" style="color: #a855f7;">@stats.Wishlist</span>
+            </a>
+
+            <hr class="my-3" style="border-color: var(--bg-secondary);" />
+
+            <div class="stat-link" style="cursor: default;">
+                <span>Totalt logget</span>
+                <span class="h4 mb-0">@stats.Total</span>
+            </div>
+
+            <a href="/log" class="btn btn-primary-custom w-100 mt-4">+ Logg spill</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Game> playingNow = new();
+    private List<Game> recentlyPlayed = new();
+    private (int Playing, int Completed, int Backlog, int Wishlist, int Total) stats;
+
+    protected override void OnInitialized()
+    {
+        playingNow = GameService.GetPlaying();
+        recentlyPlayed = GameService.GetRecentlyPlayed(4)
+            .Where(g => g.Status != GameStatus.Playing)
+            .ToList();
+
+        var loggedGames = GameService.GetLogged();
+        stats = (
+            Playing: loggedGames.Count(g => g.Status == GameStatus.Playing),
+            Completed: loggedGames.Count(g => g.Status == GameStatus.Completed),
+            Backlog: loggedGames.Count(g => g.Status == GameStatus.Backlog),
+            Wishlist: loggedGames.Count(g => g.Status == GameStatus.Wishlist),
+            Total: loggedGames.Count
+        );
+    }
+
+    private void NavigateToGame(Game game)
+    {
+        Navigation.NavigateTo($"/game/{game.Id}");
+    }
+}

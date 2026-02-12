@@ -1,0 +1,31 @@
+@page "/wishlist"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Ønskeliste - Questlogd</PageTitle>
+
+<div class="mb-4">
+    <h1>Ønskeliste</h1>
+    <p class="text-secondary">Spill du har lyst til å skaffe deg.</p>
+</div>
+
+<GameGrid Games="@wishlistGames"
+          ShowStatus="false"
+          ShowRating="false"
+          OnGameClick="@NavigateToGame"
+          EmptyMessage="Ønskelisten din er tom!" />
+
+@code {
+    private List<Game> wishlistGames = new();
+
+    protected override void OnInitialized()
+    {
+        wishlistGames = GameService.GetWishlist();
+    }
+
+    private void NavigateToGame(Game game)
+    {
+        Navigation.NavigateTo($"/game/{game.Id}");
+    }
+}

@@ -1,0 +1,33 @@
+@using Questlogd.Models
+
+<div class="game-grid">
+    @foreach (var game in Games)
+    {
+        <GameCard Game="@game"
+                  ShowStatus="@ShowStatus"
+                  ShowRating="@ShowRating"
+                  OnClick="@OnGameClick" />
+    }
+</div>
+
+@if (!Games.Any())
+{
+    <p class="text-secondary">@EmptyMessage</p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<Game> Games { get; set; } = Enumerable.Empty<Game>();
+
+    [Parameter]
+    public bool ShowStatus { get; set; } = true;
+
+    [Parameter]
+    public bool ShowRating { get; set; } = true;
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "Ingen spill å vise.";
+
+    [Parameter]
+    public EventCallback<Game> OnGameClick { get; set; }
+}

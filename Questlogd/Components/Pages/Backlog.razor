@@ -1,0 +1,30 @@
+@page "/backlog"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Backlog - Questlogd</PageTitle>
+
+<div class="mb-4">
+    <h1>Backlog</h1>
+    <p class="text-secondary">Spill du eier, men ikke har startet ennå.</p>
+</div>
+
+<GameGrid Games="@backlogGames"
+          ShowStatus="false"
+          OnGameClick="@NavigateToGame"
+          EmptyMessage="Backloggen din er tom! Legg til noen spill." />
+
+@code {
+    private List<Game> backlogGames = new();
+
+    protected override void OnInitialized()
+    {
+        backlogGames = GameService.GetBacklog();
+    }
+
+    private void NavigateToGame(Game game)
+    {
+        Navigation.NavigateTo($"/game/{game.Id}");
+    }
+}

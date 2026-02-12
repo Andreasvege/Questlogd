@@ -1,0 +1,217 @@
+@page "/log"
+@page "/log/{GameId:int}"
+@inject GameService GameService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Logg spill - Questlogd</PageTitle>
+
+<h1>Logg spill</h1>
+
+@if (selectedGame == null)
+{
+    <!-- Search for game -->
+    <div class="mb-4">
+        <label class="form-label">Søk etter spill</label>
+        <input type="text"
+               class="form-control bg-secondary-custom text-light border-0"
+               placeholder="Skriv for å søke..."
+               @bind="searchQuery"
+               @bind:event="oninput" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(searchQuery))
+    {
+        <div class="game-grid">
+            @foreach (var game in searchResults)
+            {
+                <div class="card-game" @onclick="() => SelectGame(game)">
+                    <img src="@game.CoverImageUrl"
+                         alt="@game.Name"
+                         class="card-game-cover"
+                         loading="lazy" />
+                    <div class="card-game-body">
+                        <h4 class="card-game-title">@game.Name</h4>
+                        <span class="card-game-meta">@game.Developer</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!searchResults.Any())
+        {
+            <p class="text-secondary">Ingen spill funnet for "@searchQuery"</p>
+        }
+    }
+    else
+    {
+        <p class="text-secondary">Begynn å skrive for å søke etter spill.</p>
+    }
+}
+else
+{
+    <!-- Log form for selected game -->
+    <div class="row g-4">
+        <div class="col-md-3">
+            <img src="@selectedGame.CoverImageUrl"
+                 alt="@selectedGame.Name"
+                 class="img-fluid rounded-3 shadow-lg" />
+            <button class="btn btn-outline-light w-100 mt-3" @onclick="ClearSelection">
+                &larr; Velg annet spill
+            </button>
+        </div>
+
+        <div class="col-md-9">
+            <h2 class="mb-1">@selectedGame.Name</h2>
+            <p class="text-secondary mb-4">@selectedGame.Developer &bull; @selectedGame.Genre</p>
+
+            <EditForm Model="@logForm" OnValidSubmit="SaveLog" FormName="logForm">
+                <!-- Status -->
+                <div class="mb-4">
+                    <label class="form-label">Status</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var status in Enum.GetValues<GameStatus>())
+                        {
+                            <button type="button"
+                                    class="btn @(logForm.Status == status ? "btn-primary-custom" : "btn-outline-light")"
+                                    @onclick="() => logForm.Status = status">
+                                @GetStatusText(status)
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Rating -->
+                <div class="mb-4">
+                    <label class="form-label">Rating</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        @for (int i = 1; i <= 10; i++)
+                        {
+                            var rating = i;
+                            <button type="button"
+                                    class="btn btn-sm @(logForm.Rating == rating ? "btn-primary-custom" : "btn-outline-light")"
+                                    style="width: 40px; height: 40px;"
+                                    @onclick="() => SetRating(rating)">
+                                @rating
+                            </button>
+                        }
+                        @if (logForm.Rating.HasValue)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => logForm.Rating = null">
+                                Fjern
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Hours played -->
+                <div class="mb-4">
+                    <label class="form-label">Timer spilt (valgfritt)</label>
+                    <input type="number"
+                           class="form-control bg-secondary-custom text-light border-0"
+                           style="max-width: 150px;"
+                           placeholder="0"
+                           @bind="logForm.HoursPlayed" />
+                </div>
+
+                <!-- Review -->
+                <div class="mb-4">
+                    <label class="form-label">Anmeldelse (valgfritt)</label>
+                    <textarea class="form-control bg-secondary-custom text-light border-0"
+                              rows="4"
+                              placeholder="Skriv din anmeldelse her..."
+                              @bind="logForm.Review"></textarea>
+                </div>
+
+                <!-- Submit -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary-custom" disabled="@(!logForm.Status.HasValue)">
+                        Lagre
+                    </button>
+                    <button type="button" class="btn btn-outline-light" @onclick="ClearSelection">
+                        Avbryt
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int? GameId { get; set; }
+
+    private string searchQuery = string.Empty;
+    private List<Game> searchResults => GameService.Search(searchQuery);
+    private Game? selectedGame;
+    private LogFormModel logForm = new();
+
+    protected override void OnInitialized()
+    {
+        if (GameId.HasValue)
+        {
+            var game = GameService.GetById(GameId.Value);
+            if (game != null)
+            {
+                SelectGame(game);
+            }
+        }
+    }
+
+    private void SelectGame(Game game)
+    {
+        selectedGame = game;
+        logForm = new LogFormModel
+        {
+            Status = game.Status,
+            Rating = game.Rating,
+            HoursPlayed = game.HoursPlayed,
+            Review = game.Review
+        };
+    }
+
+    private void ClearSelection()
+    {
+        selectedGame = null;
+        logForm = new();
+        searchQuery = string.Empty;
+    }
+
+    private void SetRating(int rating)
+    {
+        logForm.Rating = logForm.Rating == rating ? null : rating;
+    }
+
+    private void SaveLog()
+    {
+        if (selectedGame != null && logForm.Status.HasValue)
+        {
+            GameService.LogGame(
+                selectedGame.Id,
+                logForm.Status.Value,
+                logForm.Rating,
+                logForm.Review,
+                logForm.HoursPlayed
+            );
+            Navigation.NavigateTo($"/game/{selectedGame.Id}");
+        }
+    }
+
+    private string GetStatusText(GameStatus status) => status switch
+    {
+        GameStatus.Playing => "Spiller",
+        GameStatus.Completed => "Fullført",
+        GameStatus.Backlog => "Backlog",
+        GameStatus.Wishlist => "Ønskeliste",
+        GameStatus.Dropped => "Droppet",
+        _ => "Ukjent"
+    };
+
+    private class LogFormModel
+    {
+        public GameStatus? Status { get; set; }
+        public int? Rating { get; set; }
+        public int? HoursPlayed { get; set; }
+        public string? Review { get; set; }
+    }
+}

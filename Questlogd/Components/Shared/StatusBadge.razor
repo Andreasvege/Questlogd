@@ -1,0 +1,37 @@
+@using Questlogd.Models
+
+@if (Status.HasValue)
+{
+    <span class="badge-status @GetBadgeClass()">
+        @GetStatusText()
+    </span>
+}
+else
+{
+    <span class="badge-status badge-none">Ikke logget</span>
+}
+
+@code {
+    [Parameter]
+    public GameStatus? Status { get; set; }
+
+    private string GetBadgeClass() => Status switch
+    {
+        GameStatus.Playing => "badge-playing",
+        GameStatus.Completed => "badge-completed",
+        GameStatus.Backlog => "badge-backlog",
+        GameStatus.Wishlist => "badge-wishlist",
+        GameStatus.Dropped => "badge-dropped",
+        _ => "badge-none"
+    };
+
+    private string GetStatusText() => Status switch
+    {
+        GameStatus.Playing => "Spiller",
+        GameStatus.Completed => "Fullført",
+        GameStatus.Backlog => "Backlog",
+        GameStatus.Wishlist => "Ønskeliste",
+        GameStatus.Dropped => "Droppet",
+        _ => "Ikke logget"
+    };
+}
